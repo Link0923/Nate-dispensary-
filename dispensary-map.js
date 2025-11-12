@@ -685,6 +685,36 @@ require([
     updateLegendVisibility();
   });
 
+  // Clear All Layers button
+  document.getElementById("clearAllLayers").addEventListener("click", function() {
+    // Uncheck all layer checkboxes except Marijuana Store Locations
+    const layerCheckboxes = [
+      // "chkRetailMarijuana", // Keep this one checked
+      "chkStatisticalNeighborhoods", 
+      "chkChildcareFacilities",
+      "chkDrugTreatment", // Corrected ID for drug treatment layer
+      "chkPublicSchools",
+      "chkNonPublicSchools",
+      "chkParks",
+      "chkZoning",
+      "chkParcels",
+      "chkBuildings",
+      "chkAddresses"
+    ];
+    
+    layerCheckboxes.forEach(checkboxId => {
+      const checkbox = document.getElementById(checkboxId);
+      if (checkbox && checkbox.checked) {
+        checkbox.checked = false;
+        // Trigger the change event to update layer visibility
+        checkbox.dispatchEvent(new Event('change'));
+      }
+    });
+    
+    // Close the layers dropdown after clearing
+    document.getElementById('layersDropdown').style.display = 'none';
+  });
+
   // Filter button event listeners
   document.getElementById("applyFilters").addEventListener("click", applyFilters);
   document.getElementById("clearFilters").addEventListener("click", checkAllFilters);
@@ -1269,7 +1299,7 @@ require([
     query.returnDistinctValues = true;
     
     zoningLayerRef.queryFeatures(query).then(results => {
-      const noGoZones = ["C-RX-5", "C-RX-8", "C-RX-12", "E-MU-2.5", "E-RH-2.5", "E-RX-3", "E-RX-5", "E-SU-A", "E-SU-B", "E-SU-B1", "E-SU-D", "E-SU-D1", "E-SU-D1x", "E-SU-DX", "E-SU-G", "E-SU-G1", "E-TU-B", "E-TU-C", "G-MU-12", "G-MU-20", "G-MU-3", "G-MU-5", "G-MU-8", "G-RH-3", "G-RO-3", "G-RO-5", "G-RX-3", "G-RX-5", "M-RH-3", "M-RX-3", "M-RX-5", "M-RX-5A", "S-MU-12", "S-MU-20", "S-MU-3", "S-MU-5", "S-MU-8", "S-RH-2.5", "S-SU-A", "S-SU-D, S-SU-F", "S-SU-F1", "S-SU-FX", "S-SU-I", "S-SU-IX", "U-RH-2.5", "U-RH-2.5", "U-RH-3A", "U-RX-3", "U-RX-5", "U-SU-A", "U-SU-A1", "U-SU-A2", "U-SU-B", "U-SU-B1", "U-SU-B2", "U-SU-C", "U-SU-C1", "U-SU-C2", "U-SU-E", "U-SU-E1", "U-SU-H", "U-SU-H1", "U-TU-B", "U-TU-B2", "U-TU-C", "GTWY-RU1", "GTWY-RU2", "R-0", "R-1", "R-2", "R-2-A", "R-2-B", "R-3", "R-3-X", "R-4", "R-4-X", "R-5", "R-MU-20", "R-MU-30", "RS-4", "R-X"];
+      const noGoZones = ["CMP-EI", "CMP-EI2", "C-RX-12", "C-RX-5", "C-RX-8", "D-CV", "E-MS-2", "E-MS-2X", "E-MU-2.5", "E-MX-2", "E-MX-2A", "E-MX-2X", "E-RH-2.5", "E-RX-3", "E-RX-5", "E-SU-A", "E-SU-B", "E-SU-B1", "E-SU-D", "E-SU-D1", "E-SU-D1X", "E-SU-DX", "E-SU-G", "E-SU-G1", "E-TU-B", "E-TU-C", "G-MU-12", "G-MU-20", "G-MU-3", "G-MU-5", "G-MU-8", "G-RH-3", "G-RO-3", "G-RO-5", "G-RX-3", "G-RX-5", "M-RH-3", "M-RX-3", "M-RX-5", "M-RX-5A", "O-1", "OS-A", "OS-B", "OS-C", "PUD", "S-MU-12", "S-MU-20", "S-MU-3", "S-MU-5", "S-MU-8", "S-MX-2", "S-MX-2X", "S-RH-2.5", "S-SU-A", "S-SU-D", "S-SU-F", "S-SU-F1", "S-SU-FX", "S-SU-I", "S-SU-IX", "U-MS-2", "U-MS-2X", "U-MX-2", "U-MX-2X", "U-RH-2.5", "U-RH-3A", "U-RX-3", "U-RX-5", "U-SU-A", "U-SU-A1", "U-SU-A2", "U-SU-B", "U-SU-B1", "U-SU-B2", "U-SU-C", "U-SU-C1", "U-SU-C2", "U-SU-E", "U-SU-E1", "U-SU-H", "U-SU-H1", "U-TU-B", "U-TU-B2", "U-TU-C", "B-A-1", "B-A-2", "B-A-4", "GTWY-OSU", "O-1", "O-2", "OS-1", "P-1", "PUD-G", "GTWY-RU1", "GTWY-RU2", "R-O", "R-1", "R-2", "R-2-A", "R-2-B", "R-3", "R-3-X", "R-4", "R-4-X", "R-5", "R-MU-20", "R-MU-30", "RS-4", "R-X", "E-RH-2.5"];
       const uniqueValueInfos = [];
       
       // Get all unique zone districts from the data
@@ -2224,7 +2254,7 @@ require([
           console.log(`Pin location is in zone: ${actualZone}`);
           
           // Complete list of no-go zones for marijuana dispensaries
-          const noGoZones = ["C-RX-5", "C-RX-8", "C-RX-12", "E-MU-2.5", "E-RH-2.5", "E-RX-3", "E-RX-5", "E-SU-A", "E-SU-B", "E-SU-B1", "E-SU-D", "E-SU-D1", "E-SU-D1x", "E-SU-DX", "E-SU-G", "E-SU-G1", "E-TU-B", "E-TU-C", "G-MU-12", "G-MU-20", "G-MU-3", "G-MU-5", "G-MU-8", "G-RH-3", "G-RO-3", "G-RO-5", "G-RX-3", "G-RX-5", "M-RH-3", "M-RX-3", "M-RX-5", "M-RX-5A", "S-MU-12", "S-MU-20", "S-MU-3", "S-MU-5", "S-MU-8", "S-RH-2.5", "S-SU-A", "S-SU-D", "S-SU-F", "S-SU-F1", "S-SU-FX", "S-SU-I", "S-SU-IX", "U-RH-2.5", "U-RH-3A", "U-RX-3", "U-RX-5", "U-SU-A", "U-SU-A1", "U-SU-A2", "U-SU-B", "U-SU-B1", "U-SU-B2", "U-SU-C", "U-SU-C1", "U-SU-C2", "U-SU-E", "U-SU-E1", "U-SU-H", "U-SU-H1", "U-TU-B", "U-TU-B2", "U-TU-C", "GTWY-RU1", "GTWY-RU2", "R-0", "R-1", "R-2", "R-2-A", "R-2-B", "R-3", "R-3-X", "R-4", "R-4-X", "R-5", "R-MU-20", "R-MU-30", "RS-4", "R-X"];
+          const noGoZones = ["CMP-EI", "CMP-EI2", "C-RX-12", "C-RX-5", "C-RX-8", "D-CV", "E-MS-2", "E-MS-2X", "E-MU-2.5", "E-MX-2", "E-MX-2A", "E-MX-2X", "E-RH-2.5", "E-RX-3", "E-RX-5", "E-SU-A", "E-SU-B", "E-SU-B1", "E-SU-D", "E-SU-D1", "E-SU-D1X", "E-SU-DX", "E-SU-G", "E-SU-G1", "E-TU-B", "E-TU-C", "G-MU-12", "G-MU-20", "G-MU-3", "G-MU-5", "G-MU-8", "G-RH-3", "G-RO-3", "G-RO-5", "G-RX-3", "G-RX-5", "M-RH-3", "M-RX-3", "M-RX-5", "M-RX-5A", "O-1", "OS-A", "OS-B", "OS-C", "PUD", "S-MU-12", "S-MU-20", "S-MU-3", "S-MU-5", "S-MU-8", "S-MX-2", "S-MX-2X", "S-RH-2.5", "S-SU-A", "S-SU-D", "S-SU-F", "S-SU-F1", "S-SU-FX", "S-SU-I", "S-SU-IX", "U-MS-2", "U-MS-2X", "U-MX-2", "U-MX-2X", "U-RH-2.5", "U-RH-3A", "U-RX-3", "U-RX-5", "U-SU-A", "U-SU-A1", "U-SU-A2", "U-SU-B", "U-SU-B1", "U-SU-B2", "U-SU-C", "U-SU-C1", "U-SU-C2", "U-SU-E", "U-SU-E1", "U-SU-H", "U-SU-H1", "U-TU-B", "U-TU-B2", "U-TU-C", "B-A-1", "B-A-2", "B-A-4", "GTWY-OSU", "O-1", "O-2", "OS-1", "P-1", "PUD-G", "GTWY-RU1", "GTWY-RU2", "R-O", "R-1", "R-2", "R-2-A", "R-2-B", "R-3", "R-3-X", "R-4", "R-4-X", "R-5", "R-MU-20", "R-MU-30", "RS-4", "R-X", "E-RH-2.5"];
           
           results.inNoGoZone = noGoZones.includes(actualZone);
           results.actualZone = actualZone; // Store the actual zone for debugging
