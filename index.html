@@ -19,6 +19,10 @@
             Marijuana Store Locations
           </label>
           <label class="layer-checkbox">
+            <input type="checkbox" id="chkVettedAreas">
+            Vetted Areas
+          </label>
+          <label class="layer-checkbox">
             <input type="checkbox" id="chkChildcareFacilities">
             Childcare Facilities
           </label>
@@ -98,6 +102,10 @@
             <div class="legend-symbol" style="background-color: rgb(63,150,135); border-radius: 50%; width: 8px; height: 8px; border: 1px solid #000000;"></div>
             <span>Marijuana Store Locations</span>
           </div>
+          <div class="legend-item" data-legend="vetted-areas">
+            <div class="legend-symbol" style="background-color: #00FF00; border: 2px solid #00AA00;"></div>
+            <span>Vetted Areas</span>
+          </div>
           <div class="legend-item" data-legend="childcare-facilities">
             <div class="legend-symbol" style="background-color: #FFFF00; border-radius: 50%; width: 8px; height: 8px; border: 1px solid #FFD700;"></div>
             <span>Childcare Facilities</span>
@@ -145,6 +153,14 @@
           <div class="legend-item" data-legend="statistical-neighborhoods">
             <div class="legend-symbol" style="background: transparent; border: 2px solid #000000;"></div>
             <span>Statistical Neighborhoods</span>
+          </div>
+          <div id="zoningLegendContainer" data-legend="zoning" style="display: none;">
+            <div class="legend-category-header">
+              <span style="font-weight: bold; color: #034d46;">Zoning Districts:</span>
+            </div>
+            <div id="zoningLegendItems">
+              <!-- Dynamic zoning legend items will be added here -->
+            </div>
           </div>
         </div>
         <div id="filterPanel">
@@ -254,3 +270,4 @@
   <script src="dispensary-map.js"></script>
 </body>
 </html>
+
