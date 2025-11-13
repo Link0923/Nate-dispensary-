@@ -4,12 +4,13 @@ require([
   "esri/Map",
   "esri/views/MapView",
   "esri/layers/FeatureLayer",
+  "esri/layers/GeoJSONLayer",
   "esri/geometry/geometryEngine",
   "esri/widgets/DistanceMeasurement2D",
   "esri/widgets/AreaMeasurement2D",
   "esri/layers/GraphicsLayer",
   "esri/Graphic"
-], function(Map, MapView, FeatureLayer, geometryEngine, DistanceMeasurement2D, AreaMeasurement2D, GraphicsLayer, Graphic) {
+], function(Map, MapView, FeatureLayer, GeoJSONLayer, geometryEngine, DistanceMeasurement2D, AreaMeasurement2D, GraphicsLayer, Graphic) {
 
   let map, view;
   
@@ -17,6 +18,7 @@ require([
   let countyBoundariesLayerRef = null;
   let statisticalNeighborhoodsLayerRef = null;
   let retailMarijuanaLayerRef = null;
+  let vettedAreasLayerRef = null;
   let childcareFacilitiesLayerRef = null;
   let childcareParcelsLayerRef = null;
   let drugTreatmentLayerRef = null;
@@ -120,6 +122,30 @@ require([
   });
   retailMarijuanaLayerRef = retailMarijuanaLayer;
   map.add(retailMarijuanaLayer);
+
+  // Vetted Areas Layer (GeoJSON)
+  const vettedAreasLayer = new GeoJSONLayer({
+    url: "https://raw.githubusercontent.com/Link0923/Nate-dispensary-/be1521893cb3f9de103d2e1f6a968806a1538364/vetted_areas.geojson",
+    title: "Vetted Areas",
+    visible: false,
+    renderer: {
+      type: "simple",
+      symbol: {
+        type: "simple-fill",
+        color: [0, 255, 0, 0.6], // Bright green with transparency
+        outline: { 
+          color: [0, 170, 0, 1], // Darker green outline
+          width: 2 
+        }
+      }
+    },
+    popupTemplate: {
+      title: "Vetted Area",
+      content: "This area has been vetted for dispensary placement consideration."
+    }
+  });
+  vettedAreasLayerRef = vettedAreasLayer;
+  map.add(vettedAreasLayer);
 
   // Childcare Parcels Layer
   const childcareParcelsLayer = new FeatureLayer({
@@ -627,6 +653,11 @@ require([
     updateBufferSectionVisibility();
   });
   
+  document.getElementById("chkVettedAreas").addEventListener("change", function(e) {
+    if (vettedAreasLayerRef) vettedAreasLayerRef.visible = e.target.checked;
+    updateLegendVisibility();
+  });
+  
   document.getElementById("chkStatisticalNeighborhoods").addEventListener("change", function(e) {
     if (statisticalNeighborhoodsLayerRef) statisticalNeighborhoodsLayerRef.visible = e.target.checked;
     updateLegendVisibility();
@@ -690,6 +721,7 @@ require([
     // Uncheck all layer checkboxes except Marijuana Store Locations
     const layerCheckboxes = [
       // "chkRetailMarijuana", // Keep this one checked
+      "chkVettedAreas",
       "chkStatisticalNeighborhoods", 
       "chkChildcareFacilities",
       "chkDrugTreatment", // Corrected ID for drug treatment layer
@@ -1862,6 +1894,7 @@ require([
   function updateLegendVisibility() {
     const legendItems = {
       'retail-marijuana': retailMarijuanaLayerRef && retailMarijuanaLayerRef.visible,
+      'vetted-areas': vettedAreasLayerRef && vettedAreasLayerRef.visible,
       'childcare-facilities': childcareFacilitiesLayerRef && childcareFacilitiesLayerRef.visible,
       'childcare-parcels': childcareParcelsLayerRef && childcareParcelsLayerRef.visible,
       'drug-treatment': drugTreatmentLayerRef && drugTreatmentLayerRef.visible,
@@ -1870,6 +1903,7 @@ require([
       'non-public-schools': nonPublicSchoolsLayerRef && nonPublicSchoolsLayerRef.visible,
       'non-public-school-areas': nonPublicSchoolAreasLayerRef && nonPublicSchoolAreasLayerRef.visible,
       'parks': parksLayerRef && parksLayerRef.visible,
+      'zoning': zoningLayerRef && zoningLayerRef.visible,
       'parcels': parcelsLayerRef && parcelsLayerRef.visible,
       'buildings': buildingsLayerRef && buildingsLayerRef.visible,
       'addresses': addressesLayerRef && addressesLayerRef.visible,
@@ -1882,6 +1916,67 @@ require([
       if (legendElement) {
         legendElement.style.display = legendItems[key] ? 'flex' : 'none';
       }
+    });
+
+    // Build dynamic zoning legend when zoning layer is visible
+    if (legendItems['zoning']) {
+      buildZoningLegend();
+    }
+  }
+
+  // Build dynamic zoning legend based on ZONE_DESCRIPTION field
+  function buildZoningLegend() {
+    if (!zoningLayerRef) return;
+
+    // Query for unique zoning descriptions using distinct values
+    const query = zoningLayerRef.createQuery();
+    query.where = "1=1";
+    query.outFields = ["ZONE_DESCRIPTION"];
+    query.returnDistinctValues = true;
+    query.returnGeometry = false;
+    query.orderByFields = ["ZONE_DESCRIPTION"];
+
+    zoningLayerRef.queryFeatures(query).then(results => {
+      const zoningLegendContainer = document.getElementById("zoningLegendItems");
+      if (!zoningLegendContainer) return;
+
+      // Clear existing items
+      zoningLegendContainer.innerHTML = "";
+
+      // Use a Set to ensure unique values
+      const uniqueDescriptions = new Set();
+      results.features.forEach(feature => {
+        const description = feature.attributes.ZONE_DESCRIPTION;
+        if (description && description.trim() !== "") {
+          uniqueDescriptions.add(description.trim());
+        }
+      });
+
+      // Convert Set to Array and sort
+      const sortedDescriptions = Array.from(uniqueDescriptions).sort();
+
+      // Create legend items for each unique zoning description
+      const colors = [
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+        '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+        '#F8C471', '#82E0AA', '#F1948A', '#85C1E9', '#D5A6BD',
+        '#FFA07A', '#20B2AA', '#9370DB', '#32CD32', '#FF69B4'
+      ]; // Extended variety of colors for different zones
+
+      sortedDescriptions.forEach((description, index) => {
+        const legendItem = document.createElement("div");
+        legendItem.className = "legend-item";
+        
+        const color = colors[index % colors.length];
+        legendItem.innerHTML = `
+          <div class="legend-symbol" style="background-color: ${color}; border: 1px solid #666;"></div>
+          <span>${description}</span>
+        `;
+        
+        zoningLegendContainer.appendChild(legendItem);
+      });
+    }).catch(error => {
+      console.error("Error building zoning legend:", error);
     });
   }
 
@@ -2246,23 +2341,26 @@ require([
         const allZonesQuery = zoningLayerRef.createQuery();
         allZonesQuery.geometry = point;
         allZonesQuery.spatialRelationship = "intersects";
-        allZonesQuery.outFields = ["ZONE_DISTRICT"];
+        allZonesQuery.outFields = ["ZONE_DISTRICT", "ZONE_DESCRIPTION"];
         const allZonesResult = await zoningLayerRef.queryFeatures(allZonesQuery);
         
         if (allZonesResult.features.length > 0) {
           const actualZone = allZonesResult.features[0].attributes.ZONE_DISTRICT;
-          console.log(`Pin location is in zone: ${actualZone}`);
+          const zoneDescription = allZonesResult.features[0].attributes.ZONE_DESCRIPTION;
+          console.log(`Pin location is in zone: ${actualZone} (${zoneDescription})`);
           
           // Complete list of no-go zones for marijuana dispensaries
           const noGoZones = ["CMP-EI", "CMP-EI2", "C-RX-12", "C-RX-5", "C-RX-8", "D-CV", "E-MS-2", "E-MS-2X", "E-MU-2.5", "E-MX-2", "E-MX-2A", "E-MX-2X", "E-RH-2.5", "E-RX-3", "E-RX-5", "E-SU-A", "E-SU-B", "E-SU-B1", "E-SU-D", "E-SU-D1", "E-SU-D1X", "E-SU-DX", "E-SU-G", "E-SU-G1", "E-TU-B", "E-TU-C", "G-MU-12", "G-MU-20", "G-MU-3", "G-MU-5", "G-MU-8", "G-RH-3", "G-RO-3", "G-RO-5", "G-RX-3", "G-RX-5", "M-RH-3", "M-RX-3", "M-RX-5", "M-RX-5A", "O-1", "OS-A", "OS-B", "OS-C", "PUD", "S-MU-12", "S-MU-20", "S-MU-3", "S-MU-5", "S-MU-8", "S-MX-2", "S-MX-2X", "S-RH-2.5", "S-SU-A", "S-SU-D", "S-SU-F", "S-SU-F1", "S-SU-FX", "S-SU-I", "S-SU-IX", "U-MS-2", "U-MS-2X", "U-MX-2", "U-MX-2X", "U-RH-2.5", "U-RH-3A", "U-RX-3", "U-RX-5", "U-SU-A", "U-SU-A1", "U-SU-A2", "U-SU-B", "U-SU-B1", "U-SU-B2", "U-SU-C", "U-SU-C1", "U-SU-C2", "U-SU-E", "U-SU-E1", "U-SU-H", "U-SU-H1", "U-TU-B", "U-TU-B2", "U-TU-C", "B-A-1", "B-A-2", "B-A-4", "GTWY-OSU", "O-1", "O-2", "OS-1", "P-1", "PUD-G", "GTWY-RU1", "GTWY-RU2", "R-O", "R-1", "R-2", "R-2-A", "R-2-B", "R-3", "R-3-X", "R-4", "R-4-X", "R-5", "R-MU-20", "R-MU-30", "RS-4", "R-X", "E-RH-2.5"];
           
           results.inNoGoZone = noGoZones.includes(actualZone);
-          results.actualZone = actualZone; // Store the actual zone for debugging
+          results.actualZone = actualZone; // Store the actual zone district
+          results.zoneDescription = zoneDescription; // Store the zone description for display
           
           console.log(`Is ${actualZone} a no-go zone? ${results.inNoGoZone}`);
         } else {
           results.inNoGoZone = false;
           results.actualZone = "No zoning found";
+          results.zoneDescription = "";
           console.log("No zoning district found for this location");
         }
       }
@@ -2417,6 +2515,13 @@ require([
       
       html += `<div class="analysis-item ${pinAnalysis.inNoGoZone ? 'fail' : 'pass'}">`;
       html += `${pinAnalysis.inNoGoZone ? '❌' : '✅'} ${pinAnalysis.inNoGoZone ? 'In No-Go Zone' : 'Not in No-Go Zone'}`;
+      if (pinAnalysis.actualZone && pinAnalysis.actualZone !== 'No zoning found') {
+        html += `<br><span style="font-size: 0.9em; color: #666; margin-left: 20px;">Zone: ${pinAnalysis.actualZone}`;
+        if (pinAnalysis.zoneDescription && pinAnalysis.zoneDescription.trim() !== '') {
+          html += ` - ${pinAnalysis.zoneDescription}`;
+        }
+        html += `</span>`;
+      }
       html += `</div>`;
       
       html += `<div class="analysis-item ${pinAnalysis.inNoGoNeighborhood ? 'fail' : 'pass'}">`;
